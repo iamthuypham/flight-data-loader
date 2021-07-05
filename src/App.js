@@ -1,22 +1,22 @@
-import logo from './logo.svg';
 import './App.css';
+import { invoke } from '@tauri-apps/api/tauri'
+import { useEffect, useState } from 'react';
 
-function App() {
+const App = () => {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!data) {
+      invoke('my_custom_command').then((message) => setData(message)).catch(error => setError(error))
+    }
+    console.log(data)
+  }, [data])
+  console.log("Any Error?:", error)
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <p>{data || "nothing yet"}</p>
       </header>
     </div>
   );
