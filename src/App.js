@@ -1,22 +1,31 @@
 import './App.css';
+import { listen } from '@tauri-apps/api/event';
+import { useEffect, useCallback, useState, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/tauri'
-import { useEffect, useState } from 'react';
 
 const App = () => {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
+  const [altitude, setAltitude] = useState(0);
 
   useEffect(() => {
-    if (!data) {
-      invoke('my_custom_command').then((message) => setData(message)).catch(error => setError(error))
-    }
-    console.log(data)
-  }, [data])
-  console.log("Any Error?:", error)
+    listen('rust-event', myCallback)
+  }, [])
+
+  const myCallback = useCallback((e) => {
+    const batch = JSON.parse(e.payload);
+    const num = batch[0].exp_time;
+    console.log(e);
+    setAltitude(num);
+  })
+
+  const handleClick = async () => {
+    invoke('my_custom_command').catch(error => console.log("Erorrrrr:", error));
+  };
+
   return (
     <div className="App">
       <header className="App-header">
-        <p>{data || "nothing yet"}</p>
+        <button onClick={handleClick}>Click Me!</button>
+        <span>{altitude}</span>
       </header>
     </div>
   );
