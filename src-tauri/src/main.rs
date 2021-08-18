@@ -48,8 +48,10 @@ async fn my_custom_command(window: tauri::Window) {
     Field::new("warnings_chute_fault_warn", DataType::Utf8, false)
   ]);
 
+  // Open file
   let file = File::open("src/data.csv").unwrap();
 
+  // Get csv Reader using schema
   let mut csv = csv::Reader::new(file, Arc::new(schema), true, None, 1, None, None);
 
     while let Some(m) = csv.next() {
