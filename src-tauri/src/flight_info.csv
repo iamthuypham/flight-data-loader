@@ -1,4 +1,0 @@
-id,sw_version,controller_ip,time_step,,,,,,,,,,,,,,,,,,,,,,
-SIM,2.0.0,10.132.5.14,0.01,,,,,,,,,,,,,,,,,,,,,,
-escape_enabled,escape_cmd,liftoff,meco,separation,coast_start,apogee,coast_end,drogue_chutes,main_chutes,touchdown,safing,mission_end,,,,,,,,,,,,,
-2,0,307.24,443.02,462.31,480.31,546.2,648.62,798.79,810.28,922.89,922.9,1078.91,,,,,,,,,,,,,

@@ -4,10 +4,19 @@ import { useEffect, useCallback, useState, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/tauri'
 
 const App = () => {
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [value, setValue] = useState(null);
 
   useEffect(() => {
-    listen('rust-event', myCallback)
+    if (isInitialLoad) {
+      setTimeout(() => { closeSplashScreen() }, 4000);
+      listen('rust-event', myCallback);
+      setIsInitialLoad(false);
+    }
+  }, [isInitialLoad])
+
+  const closeSplashScreen = useCallback(async () => {
+    return await invoke('close_splashscreen');
   }, [])
 
   const myCallback = useCallback((e) => {
@@ -23,35 +32,51 @@ const App = () => {
     <div className="App">
       <header className="App-header">
         <button onClick={handleClick}>Click Me!</button>
-        {value &&
-        <>
-        <span>Exp Time: {value.exp_time}</span>
-        <span>Utc Time: {value.utc_time}</span>
-        <span>Lat Long 1: {value.lat_long_1}</span>
-        <span>Lat Long 2:{value.lat_long_2}</span>
-        <span>Pos 1: {value.pos_1}</span>
-        <span>Pos 2: {value.pos_2}</span>
-        <span>Pos 3: {value.pos_3}</span>
-        <span>Gps alt: {value.gps_alt}</span>
-        <span>Vel 1: {value.vel_1}</span>
-        <span>Vel 2: {value.vel_2}</span>
-        <span>Vel 3:{value.vel_3}</span>
-        <span>Accel 1: {value.accel_1}</span>
-        <span>Accel 2: {value.accel_2}</span>
-        <span>Accel 3: {value.accel_3}</span>
-        <span>Mag Accel: {value.mag_accel}</span>
-        <span>Att 1: {value.att_1}</span>
-        <span>Att 2: {value.att_2}</span>
-        <span>Att 3: {value.att_3}</span>
-        <span>Ang vel: {value.ang_vel_1}</span>
-        <span>Ang vel: {value.ang_vel_2}</span>
-        <span>Ang vel: {value.ang_vel_3}</span>
-        <span>Warning Liff Off: {value.warnings_liftoff_warn}</span>
-        <span>Warning Rcs: {value.warnings_rcs_warn}</span>
-        <span>Warning Drogue: {value.warnings_drogue_chute_warn}</span>
-        <span>Warning Landing: {value.warnings_landing_warn}</span>
-        <span>Warning Chute: {value.warnings_chute_fault_warn}</span>
-        </>
+        {value && <table>
+            <tr>
+              <td>Time</td>
+              <td>{value.TIME_NANOSECONDS_TAI}</td>
+            </tr>
+            <tr>
+              <td>truth_pos_CON_ECEF_ECEF_M[1]</td>
+              <td>{value['truth_pos_CON_ECEF_ECEF_M[1]']}</td>
+            </tr>
+            <tr>
+              <td>truth_pos_CON_ECEF_ECEF_M[2]</td>
+              <td>{value['truth_pos_CON_ECEF_ECEF_M[2]']}</td>
+            </tr>
+            <tr>
+              <td>truth_pos_CON_ECEF_ECEF_M[3]</td>
+              <td>{value['truth_pos_CON_ECEF_ECEF_M[3]']}</td>
+            </tr>
+            <tr>
+              <td>truth_vel_CON_ECEF_ECEF_MpS[1]</td>
+              <td>{value['truth_vel_CON_ECEF_ECEF_MpS[1]']}</td>
+            </tr>
+            <tr>
+              <td>truth_vel_CON_ECEF_ECEF_MpS[2]</td>
+              <td> {value['truth_vel_CON_ECEF_ECEF_MpS[2]']}</td>
+            </tr>
+            <tr>
+              <td>truth_vel_CON_ECEF_ECEF_MpS[3]</td>
+              <td> {value['truth_vel_CON_ECEF_ECEF_MpS[3]']}</td>
+            </tr>
+            <tr>
+              <td>truth_quat_CON2ECEF[1]</td>
+              <td> {value['truth_quat_CON2ECEF[1]']}</td>
+            </tr>
+            <tr>
+              <td>truth_quat_CON2ECEF[2]</td>
+              <td> {value['truth_quat_CON2ECEF[2]']}</td>
+            </tr>
+            <tr>
+              <td>truth_quat_CON2ECEF[3]</td>
+              <td> {value['truth_quat_CON2ECEF[3]']}</td></tr>
+            <tr>
+              <td>truth_quat_CON2ECEF[4]</td>
+              <td> {value['truth_quat_CON2ECEF[4]']}</td>
+            </tr>
+          </table>
         }
       </header>
     </div>
