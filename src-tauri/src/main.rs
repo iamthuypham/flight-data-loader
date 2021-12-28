@@ -9,7 +9,7 @@
 
 use tauri::Manager;
 use arrow::csv;
-use arrow::datatypes::{DataType, Field, Schema, TimeUnit, Time64NanosecondType};
+use arrow::datatypes::{DataType, Field, Schema};
 use arrow::array::{StringArray};
 use std::fs::File;
 use std::sync::Arc;
@@ -17,6 +17,7 @@ use arrow::json::writer::record_batches_to_json_rows;
 use serde_json::to_string;
 use settimeout::set_timeout;
 use std::time::Duration;
+use std::convert::TryInto;
 use arrow::record_batch::RecordBatch;
 
 #[tauri::command]
@@ -81,57 +82,90 @@ async fn my_custom_command(window: tauri::Window) {
   let mut lidar_csv = csv::Reader::new(lidar_file, Arc::new(lidar_schema.clone()), true, None, 1, None, None);
 
   let mut start: i64 = 1602596010219040000;
-  let end: i64 = 1602596810212950000;
+  let end: i64 =       1602596810229000000;
 
   let mut truth_record_batch: RecordBatch = RecordBatch::new_empty(Arc::new(truth_schema));
-  // let mut lidar_record_batch: RecordBatch = RecordBatch::new_empty(Arc::new(lidar_schema));
+  let mut lidar_record_batch: RecordBatch = RecordBatch::new_empty(Arc::new(lidar_schema));
+  let mut dlc_record_batch: RecordBatch = RecordBatch::new_empty(Arc::new(dlc_schema));
 
-  // let mut lidar_should_be_next:bool = true ;
-  // let mut lidar_time:i64 = 0;
+  let mut truth_should_be_next:bool = true ;
+  let mut truth_time:i64 = 0;
+
+  let mut lidar_should_be_next:bool = true ;
+  let mut lidar_time:i64 = 0;
+  let mut lidar_is_complete: bool = false;
+
+  let mut dlc_should_be_next:bool = true ;
+  let mut dlc_time:i64 = 0;
   
   while start <= end {
-    println!("{}", &start);
-    // set_timeout(Duration::from_micros(10_000)).await;
-    // window
-    //     .emit("tai-event", &start)
-    //     .expect("failed to emit");
-
-    truth_record_batch = truth_csv.nth(0).unwrap().unwrap();
-    let truth_time = get_time(&truth_record_batch);
+    set_timeout(Duration::from_micros(5_000)).await;
+    window
+        .emit("tai-event", &start)
+        .expect("failed to emit");
     
-    // if lidar_should_be_next {
-    //   lidar_record_batch = lidar_csv.nth(0).unwrap().unwrap();
-    //   lidar_time = get_time(&lidar_record_batch);
-    // }
+    if truth_should_be_next {
+      truth_record_batch = truth_csv.nth(0).unwrap().unwrap();
+      truth_time = get_time(&truth_record_batch);
+    }
 
-    if truth_time - start <= 1000 {
+    if is_closed(truth_time, start) {
       let json_rows1 = record_batches_to_json_rows(&[truth_record_batch.clone()]);
       let serialized1 = to_string(&json_rows1).unwrap();
-
-        // Delay process so frontend not freaking out
-        set_timeout(Duration::from_micros(10000)).await;
+      truth_should_be_next = true;
       window
-        .emit("truth-event", serialized1)
-        .expect("failed to emit");
+      .emit("truth-event", serialized1)
+      .expect("failed to emit");
+    } else {
+      truth_should_be_next = false;
     } 
 
-    // if lidar_time - start <= 10000 {
-    //   let json_rows2 = record_batches_to_json_rows(&[lidar_record_batch.clone()]);
-    //   let serialized2 = to_string(&json_rows2).unwrap();
+    if lidar_should_be_next {
+      let lidar_option = lidar_csv.nth(0);
 
-    //     // Delay process so frontend not freaking out
-    //     // set_timeout(Duration::from_micros(10_000)).await;
-    //   window
-    //     .emit("lidar-event", serialized2)
-    //     .expect("failed to emit");
-    // } else {
-    //   // keep current record batch
-    //   lidar_should_be_next = false;
-    // } 
+      if lidar_option.is_none() {
+        lidar_is_complete = true;
+      } else {
+        lidar_record_batch = lidar_option.unwrap().unwrap();
+        lidar_time = get_time(&lidar_record_batch);
+      }
+    }
 
-    start = start + 10000000; // 10_000_000
+    if lidar_is_complete == false && is_closed(lidar_time, start) {
+      let json_rows2 = record_batches_to_json_rows(&[lidar_record_batch.clone()]);
+      let serialized2 = to_string(&json_rows2).unwrap();
+      lidar_should_be_next = true;
+      window
+        .emit("lidar-event", serialized2)
+        .expect("failed to emit");
+    } else {
+      lidar_should_be_next = false;
+    } 
+
+    if dlc_should_be_next {
+      dlc_record_batch = dlc_csv.nth(0).unwrap().unwrap();
+      dlc_time = get_time(&dlc_record_batch);
+    }
+
+    if is_closed(dlc_time, start) {
+      let json_rows3 = record_batches_to_json_rows(&[dlc_record_batch.clone()]);
+      let serialized3 = to_string(&json_rows3).unwrap();
+      dlc_should_be_next = true;
+      window
+        .emit("dlc-event", serialized3)
+        .expect("failed to emit");
+    } else {
+      dlc_should_be_next = false;
+    } 
+
+    start = start + 10_000_000;
   }
-    
+}
+
+fn is_closed(first: i64, second: i64) -> bool {
+  let dec_first = first / 10_000_000;
+  let dec_second = second / 10_000_000;
+  return dec_first == dec_second;
 }
 
 fn get_time(record_batch: &RecordBatch) -> i64 {
