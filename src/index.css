@@ -12,10 +12,11 @@ code {
     monospace;
 }
 
-table td {
+table {
+  width: 100%;
   text-align: left;
 }
 
-table td:nth-child(2) {
-  width: 250px;
+table td:nth-child(1) {
+  width: 50%;
 }

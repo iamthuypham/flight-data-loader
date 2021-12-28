@@ -17,7 +17,6 @@ use arrow::json::writer::record_batches_to_json_rows;
 use serde_json::to_string;
 use settimeout::set_timeout;
 use std::time::Duration;
-use std::convert::TryInto;
 use arrow::record_batch::RecordBatch;
 
 #[tauri::command]
@@ -99,7 +98,7 @@ async fn my_custom_command(window: tauri::Window) {
   let mut dlc_time:i64 = 0;
   
   while start <= end {
-    set_timeout(Duration::from_micros(5_000)).await;
+    set_timeout(Duration::from_millis(5)).await;
     window
         .emit("tai-event", &start)
         .expect("failed to emit");

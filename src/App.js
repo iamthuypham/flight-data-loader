@@ -1,42 +1,54 @@
 import './App.css';
 import { listen } from '@tauri-apps/api/event';
-import { useEffect, useCallback, useState, useMemo } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { invoke } from '@tauri-apps/api/tauri'
 
 const App = () => {
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [tai, setTai] = useState(null);
+  const [tai, setTai] = useState(0);
   const [truth, setTruth] = useState(null);
   const [lidar, setLidar] = useState(null);
+  const [dlc, setDlc] = useState(null);
 
   useEffect(() => {
-    if (isInitialLoad) {
-      setTimeout(() => { closeSplashScreen() }, 5000);
-      // listen('tai-event', taiCb);
-      listen('truth-event', truthCb);
-      // listen('lidar-event', lidarCb);
-      setIsInitialLoad(false);
-    }
-  }, [isInitialLoad])
+      setTimeout(() => { closeSplashScreen() }, 1000);
+      const taiUnlisten = listen('tai-event', taiCb);
+      const truthUnlisten = listen('truth-event', truthCb);
+      const lidarUnlisten = listen('lidar-event', lidarCb);
+      const dlcUnlisten = listen('dlc-event', dlcCb);
+
+      return () => {
+        taiUnlisten.then(f => f());
+        truthUnlisten.then(f => f());
+        lidarUnlisten.then(f => f());
+        dlcUnlisten.then(f => f());
+      }
+  }, [])
 
   const closeSplashScreen = useCallback(async () => {
     return await invoke('close_splashscreen');
   }, [])
 
-  // const taiCb = useCallback((e) => {
-  //   const batch = JSON.parse(e.payload);
-  //   setTai(batch)
-  // })
+  const taiCb = useCallback((e) => {
+    const batch = JSON.parse(e.payload);
+    setTai(batch)
+  })
 
   const truthCb = useCallback((e) => {
     const batch = JSON.parse(e.payload);
     setTruth(batch[0])
   })
 
-  // const lidarCb = useCallback((e) => {
-  //   const batch = JSON.parse(e.payload);
-  //   setLidar(batch[0])
-  // })
+  const lidarCb = useCallback((e) => {
+    const batch = JSON.parse(e.payload);
+    console.log(batch);
+    setLidar(batch[0])
+  })
+
+  const dlcCb = useCallback((e) => {
+    const batch = JSON.parse(e.payload);
+    console.log(batch);
+    setDlc(batch[0])
+  })
 
   const handleClick = async () => {
     invoke('my_custom_command').catch(error => console.log("Erorrrrr:", error));
@@ -46,84 +58,113 @@ const App = () => {
     <div className="App">
       <header className="App-header">
         <button onClick={handleClick}>Click Me!</button>
-        {tai && <div>
-          <span>Time</span>
-          <span>{tai}</span>
-        </div>}
-        {truth && <table>
+        {<table>
+          <tr>
+          <td>Time: </td>
+          <td>{tai}</td>
+          </tr>
+        </table>}
+        {<table>
             <tr>
               <td>truth_pos_CON_ECEF_ECEF_M[1]</td>
-              <td>{truth['truth_pos_CON_ECEF_ECEF_M[1]']}</td>
+              <td>{truth && truth['truth_pos_CON_ECEF_ECEF_M[1]']}</td>
             </tr>
             <tr>
               <td>truth_pos_CON_ECEF_ECEF_M[2]</td>
-              <td>{truth['truth_pos_CON_ECEF_ECEF_M[2]']}</td>
+              <td>{truth && truth['truth_pos_CON_ECEF_ECEF_M[2]']}</td>
             </tr>
             <tr>
               <td>truth_pos_CON_ECEF_ECEF_M[3]</td>
-              <td>{truth['truth_pos_CON_ECEF_ECEF_M[3]']}</td>
+              <td>{truth && truth['truth_pos_CON_ECEF_ECEF_M[3]']}</td>
             </tr>
             <tr>
               <td>truth_vel_CON_ECEF_ECEF_MpS[1]</td>
-              <td>{truth['truth_vel_CON_ECEF_ECEF_MpS[1]']}</td>
+              <td>{truth && truth['truth_vel_CON_ECEF_ECEF_MpS[1]']}</td>
             </tr>
             <tr>
               <td>truth_vel_CON_ECEF_ECEF_MpS[2]</td>
-              <td> {truth['truth_vel_CON_ECEF_ECEF_MpS[2]']}</td>
+              <td> {truth && truth['truth_vel_CON_ECEF_ECEF_MpS[2]']}</td>
             </tr>
             <tr>
               <td>truth_vel_CON_ECEF_ECEF_MpS[3]</td>
-              <td> {truth['truth_vel_CON_ECEF_ECEF_MpS[3]']}</td>
+              <td> {truth && truth['truth_vel_CON_ECEF_ECEF_MpS[3]']}</td>
             </tr>
             <tr>
               <td>truth_quat_CON2ECEF[1]</td>
-              <td> {truth['truth_quat_CON2ECEF[1]']}</td>
+              <td> {truth && truth['truth_quat_CON2ECEF[1]']}</td>
             </tr>
             <tr>
               <td>truth_quat_CON2ECEF[2]</td>
-              <td> {truth['truth_quat_CON2ECEF[2]']}</td>
+              <td> {truth && truth['truth_quat_CON2ECEF[2]']}</td>
             </tr>
             <tr>
               <td>truth_quat_CON2ECEF[3]</td>
-              <td> {truth['truth_quat_CON2ECEF[3]']}</td></tr>
+              <td> {truth && truth['truth_quat_CON2ECEF[3]']}</td></tr>
             <tr>
               <td>truth_quat_CON2ECEF[4]</td>
-              <td> {truth['truth_quat_CON2ECEF[4]']}</td>
+              <td> {truth && truth['truth_quat_CON2ECEF[4]']}</td>
             </tr>
           </table>
         }
-        {lidar && <table>
+        {<table>
             <tr>
               <td>OMPS_Range_M[1]</td>
-              <td> {truth['OMPS_Range_M[1]']}</td>
+              <td> {lidar && lidar['OMPS_Range_M[1]']}</td>
             </tr>
             <tr>
               <td>OMPS_Range_M[2]</td>
-              <td> {truth['OMPS_Range_M[2]']}</td>
+              <td> {lidar && lidar['OMPS_Range_M[2]']}</td>
             </tr>
             <tr>
               <td>OMPS_Range_M[3]</td>
-              <td> {truth['OMPS_Range_M[3]']}</td>
+              <td> {lidar && lidar['OMPS_Range_M[3]']}</td>
             </tr>
             <tr>
               <td>OMPS_Range_M[4]</td>
-              <td> {truth['OMPS_Range_M[4]']}</td>
+              <td> {lidar && lidar['OMPS_Range_M[4]']}</td>
             </tr>
             <tr>
               <td>OMPS_DopplerSpeed_MpS[1]</td>
-              <td> {truth['OMPS_DopplerSpeed_MpS[1]']}</td>
+              <td> {lidar && lidar['OMPS_DopplerSpeed_MpS[1]']}</td>
             </tr>
             <tr>
               <td>OMPS_DopplerSpeed_MpS[2]</td>
-              <td> {truth['OMPS_DopplerSpeed_MpS[2]']}</td>
+              <td> {lidar && lidar['OMPS_DopplerSpeed_MpS[2]']}</td>
             </tr>
             <tr>
               <td>OMPS_DopplerSpeed_MpS[3]</td>
-              <td> {truth['OMPS_DopplerSpeed_MpS[3]']}</td>
+              <td> {lidar && lidar['OMPS_DopplerSpeed_MpS[3]']}</td>
             </tr>
             <tr>
               <td>OMPS_DopplerSpeed_MpS[4]</td>
-              <td> {truth['OMPS_DopplerSpeed_MpS[4]']}</td>
+              <td> {lidar && lidar['OMPS_DopplerSpeed_MpS[4]']}</td>
+            </tr>
+          </table>
+        }
+        {<table>
+            <tr>
+              <td>DATA_DELTA_VEL[1]</td>
+              <td> {dlc && dlc['DATA_DELTA_VEL[1]']}</td>
+            </tr>
+            <tr>
+              <td>DATA_DELTA_VEL[2]</td>
+              <td> {dlc && dlc['DATA_DELTA_VEL[2]']}</td>
+            </tr>
+            <tr>
+              <td>DATA_DELTA_VEL[3]</td>
+              <td> {dlc && dlc['DATA_DELTA_VEL[3]']}</td>
+            </tr>
+            <tr>
+              <td>DATA_DELTA_ANGLE[1]</td>
+              <td> {dlc && dlc['DATA_DELTA_ANGLE[1]']}</td>
+            </tr>
+            <tr>
+              <td>DATA_DELTA_ANGLE[2]</td>
+              <td> {dlc && dlc['DATA_DELTA_ANGLE[2]']}</td>
+            </tr>
+            <tr>
+              <td>DATA_DELTA_ANGLE[3]</td>
+              <td> {dlc && dlc['DATA_DELTA_ANGLE[3]']}</td>
             </tr>
           </table>
         }
