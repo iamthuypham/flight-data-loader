@@ -57,48 +57,28 @@ async fn my_custom_command(window: tauri::Window) {
     Field::new("DATA_DELTA_ANGLE[3]", DataType::Float64, false)
   ]);
 
-  let lidar_schema = Schema::new(vec![
-    Field::new("TIME_NANOSECONDS_TAI", DataType::Utf8, false),
-    Field::new("OMPS_Range_M[1]", DataType::Float64, false),
-    Field::new("OMPS_Range_M[2]", DataType::Float64, false),
-    
-    Field::new("OMPS_Range_M[3]", DataType::Float64, false),
-    Field::new("OMPS_Range_M[4]", DataType::Float64, false),
-    Field::new("OMPS_DopplerSpeed_MpS[1]", DataType::Float64, false),
-    Field::new("OMPS_DopplerSpeed_MpS[2]", DataType::Float64, false),
-    Field::new("OMPS_DopplerSpeed_MpS[3]", DataType::Float64, false),
-    Field::new("OMPS_DopplerSpeed_MpS[4]", DataType::Float64, false),
-  ]);
-
   // Open file
-  let truth_file = File::open("data/Flight1_Catered_Dataset/Data/truth.csv").unwrap();
-  let dlc_file = File::open("data/Flight1_Catered_Dataset/Data/dlc.csv").unwrap();
-  let lidar_file = File::open("data/Flight1_Catered_Dataset/Data/commercial_lidar.csv").unwrap();
+  let truth_file = File::open("data/truth.csv").unwrap();
+  let dlc_file = File::open("data/dlc.csv").unwrap();
 
   // Get csv Reader using schema
   let mut truth_csv = csv::Reader::new(truth_file, Arc::new(truth_schema.clone()), true, None, 1, None, None);
   let mut dlc_csv = csv::Reader::new(dlc_file, Arc::new(dlc_schema.clone()), true, None, 1, None, None);
-  let mut lidar_csv = csv::Reader::new(lidar_file, Arc::new(lidar_schema.clone()), true, None, 1, None, None);
 
-  let mut start: i64 = 1602596010219040000;
+  let mut start: i64 = 1602596010219040000; // T-0
   let end: i64 =       1602596810229000000;
 
   let mut truth_record_batch: RecordBatch = RecordBatch::new_empty(Arc::new(truth_schema));
-  let mut lidar_record_batch: RecordBatch = RecordBatch::new_empty(Arc::new(lidar_schema));
   let mut dlc_record_batch: RecordBatch = RecordBatch::new_empty(Arc::new(dlc_schema));
 
   let mut truth_should_be_next:bool = true ;
   let mut truth_time:i64 = 0;
 
-  let mut lidar_should_be_next:bool = true ;
-  let mut lidar_time:i64 = 0;
-  let mut lidar_is_complete: bool = false;
-
   let mut dlc_should_be_next:bool = true ;
   let mut dlc_time:i64 = 0;
   
   while start <= end {
-    set_timeout(Duration::from_millis(5)).await;
+    // set_timeout(Duration::from_millis(8)).await;
     window
         .emit("tai-event", &start)
         .expect("failed to emit");
@@ -117,28 +97,6 @@ async fn my_custom_command(window: tauri::Window) {
       .expect("failed to emit");
     } else {
       truth_should_be_next = false;
-    } 
-
-    if lidar_should_be_next {
-      let lidar_option = lidar_csv.nth(0);
-
-      if lidar_option.is_none() {
-        lidar_is_complete = true;
-      } else {
-        lidar_record_batch = lidar_option.unwrap().unwrap();
-        lidar_time = get_time(&lidar_record_batch);
-      }
-    }
-
-    if lidar_is_complete == false && is_closed(lidar_time, start) {
-      let json_rows2 = record_batches_to_json_rows(&[lidar_record_batch.clone()]);
-      let serialized2 = to_string(&json_rows2).unwrap();
-      lidar_should_be_next = true;
-      window
-        .emit("lidar-event", serialized2)
-        .expect("failed to emit");
-    } else {
-      lidar_should_be_next = false;
     } 
 
     if dlc_should_be_next {
@@ -188,16 +146,3 @@ fn main() {
     .run(tauri::generate_context!())
     .expect("failed to run app");
 }
-
-// truth: s-1.60259601021904e+18 e-1.60259681021295e+18
-// dlc  : s-1.6025960102293e+18  e-1.602596810229e+18
-// lidar: s-1.60259621009107e+18 e-1.60259665919107e+18
-
-// t-0  :   1.60259621021e+18
-// let x, y, z = 0;
-// loop i from 1.60259601021904e+18 to 1.60259681021295e+18
-// if i === truth[x].tai: emit  and x++
-// if i === dlc[x].tai: emit  and y++
-// if i === lidar[x].tai: emit  and z++
-
-// 1.60 25 96 01 02 39 04 00 00

@@ -1,5 +1,5 @@
 {
-  "name": "payload-kit-2",
+  "name": "flight-data-loader",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

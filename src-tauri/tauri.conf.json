@@ -1,6 +1,6 @@
 {
   "package": {
-    "productName": "payload-kit-2",
+    "productName": "flight-data-loader",
     "version": "2.0.0"
   },
   "build": {

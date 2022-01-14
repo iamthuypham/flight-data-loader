@@ -6,20 +6,17 @@ import { invoke } from '@tauri-apps/api/tauri'
 const App = () => {
   const [tai, setTai] = useState(0);
   const [truth, setTruth] = useState(null);
-  const [lidar, setLidar] = useState(null);
   const [dlc, setDlc] = useState(null);
 
   useEffect(() => {
       setTimeout(() => { closeSplashScreen() }, 1000);
       const taiUnlisten = listen('tai-event', taiCb);
       const truthUnlisten = listen('truth-event', truthCb);
-      const lidarUnlisten = listen('lidar-event', lidarCb);
       const dlcUnlisten = listen('dlc-event', dlcCb);
 
       return () => {
         taiUnlisten.then(f => f());
         truthUnlisten.then(f => f());
-        lidarUnlisten.then(f => f());
         dlcUnlisten.then(f => f());
       }
   }, [])
@@ -29,24 +26,17 @@ const App = () => {
   }, [])
 
   const taiCb = useCallback((e) => {
-    const batch = JSON.parse(e.payload);
-    setTai(batch)
+      const batch = JSON.parse(e.payload);
+      setTai(batch)
   })
 
   const truthCb = useCallback((e) => {
-    const batch = JSON.parse(e.payload);
-    setTruth(batch[0])
-  })
-
-  const lidarCb = useCallback((e) => {
-    const batch = JSON.parse(e.payload);
-    console.log(batch);
-    setLidar(batch[0])
+      const batch = JSON.parse(e.payload);
+      setTruth(batch[0])
   })
 
   const dlcCb = useCallback((e) => {
     const batch = JSON.parse(e.payload);
-    console.log(batch);
     setDlc(batch[0])
   })
 
@@ -103,41 +93,6 @@ const App = () => {
             <tr>
               <td>truth_quat_CON2ECEF[4]</td>
               <td> {truth && truth['truth_quat_CON2ECEF[4]']}</td>
-            </tr>
-          </table>
-        }
-        {<table>
-            <tr>
-              <td>OMPS_Range_M[1]</td>
-              <td> {lidar && lidar['OMPS_Range_M[1]']}</td>
-            </tr>
-            <tr>
-              <td>OMPS_Range_M[2]</td>
-              <td> {lidar && lidar['OMPS_Range_M[2]']}</td>
-            </tr>
-            <tr>
-              <td>OMPS_Range_M[3]</td>
-              <td> {lidar && lidar['OMPS_Range_M[3]']}</td>
-            </tr>
-            <tr>
-              <td>OMPS_Range_M[4]</td>
-              <td> {lidar && lidar['OMPS_Range_M[4]']}</td>
-            </tr>
-            <tr>
-              <td>OMPS_DopplerSpeed_MpS[1]</td>
-              <td> {lidar && lidar['OMPS_DopplerSpeed_MpS[1]']}</td>
-            </tr>
-            <tr>
-              <td>OMPS_DopplerSpeed_MpS[2]</td>
-              <td> {lidar && lidar['OMPS_DopplerSpeed_MpS[2]']}</td>
-            </tr>
-            <tr>
-              <td>OMPS_DopplerSpeed_MpS[3]</td>
-              <td> {lidar && lidar['OMPS_DopplerSpeed_MpS[3]']}</td>
-            </tr>
-            <tr>
-              <td>OMPS_DopplerSpeed_MpS[4]</td>
-              <td> {lidar && lidar['OMPS_DopplerSpeed_MpS[4]']}</td>
             </tr>
           </table>
         }
