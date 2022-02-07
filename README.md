@@ -1,5 +1,4 @@
-# Experimental Tauri Stack App
-A PKIT app using Tauri + React stack
+A app using Tauri + React stack to load flight data
 
 ## Get Started
 1. Setting Up Your Environment
